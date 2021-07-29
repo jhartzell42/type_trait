@@ -23,6 +23,10 @@ pub enum TypeType {
 
 pub type TypeInfoVtable = Box<dyn TypeInfo>;
 
+pub fn wrap_value<T: 'static + TypeInfo>(val: T) -> TypeInfoVtable {
+    Box::new(val)
+}
+
 pub trait TypeInfo {
     fn member_by_index(&self, which: usize) -> Option<(&'static str, TypeInfoVtable)>;
     fn name(&self) -> Option<&'static str>;
@@ -30,41 +34,62 @@ pub trait TypeInfo {
     fn copy(&self) -> TypeInfoVtable;
 }
 
-impl<T> Type for Option<T> where T: Type {
-    fn type_info() -> TypeInfoVtable {
-        struct TypeInfoStruct(TypeInfoVtable);
+fn wrap_as_option(val: TypeInfoVtable) -> TypeInfoVtable {
+    struct TypeInfoStruct(TypeInfoVtable);
 
-        impl TypeInfo for TypeInfoStruct {
-            fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
-                match w {
-                    0 => {
-                        let vtable = match self {
-                            TypeInfoStruct(vtable) => vtable
-                        };
-                        Some(("some", vtable.copy()))
-                    },
-                    _ => None,
-                }
-            }
-
-            fn name(&self) -> Option<&'static str> {
-                None
-            }
-
-            fn type_type(&self) -> TypeType {
-                TypeType::Option
-            }
-
-            fn copy(&self) -> TypeInfoVtable {
-                let vtable = match self {
-                    TypeInfoStruct(vtable) => vtable
-                };
-                Box::new(TypeInfoStruct(vtable.copy()))
+    impl TypeInfo for TypeInfoStruct {
+        fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
+            match w {
+                0 => {
+                    let vtable = match self {
+                        TypeInfoStruct(vtable) => vtable
+                    };
+                    Some(("some", vtable.copy()))
+                },
+                _ => None,
             }
         }
 
-        // TODO: Save this allocation. Is it possible?
-        Box::new(TypeInfoStruct(T::type_info()))
+        fn name(&self) -> Option<&'static str> {
+            None
+        }
+
+        fn type_type(&self) -> TypeType {
+            TypeType::Option
+        }
+
+        fn copy(&self) -> TypeInfoVtable {
+            let vtable = match self {
+                TypeInfoStruct(vtable) => vtable
+            };
+            wrap_as_option(vtable.copy())
+        }
+    }
+
+    wrap_value(TypeInfoStruct(val))
+}
+
+impl<T> Type for Option<T> where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        wrap_as_option(T::type_info())
+    }
+}
+
+impl<T> Type for &T where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        T::type_info()
+    }
+}
+
+impl<T> Type for &mut T where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        T::type_info()
+    }
+}
+
+impl<T> Type for Box<T> where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        T::type_info()
     }
 }
 
@@ -88,11 +113,11 @@ macro_rules! primitive_type {
                     }
 
                     fn copy(&self) -> TypeInfoVtable {
-                        Box::new(TypeInfoStruct)
+                        wrap_value(TypeInfoStruct)
                     }
                 }
 
-                Box::new(TypeInfoStruct)
+                wrap_value(TypeInfoStruct)
             }
         }
     };
