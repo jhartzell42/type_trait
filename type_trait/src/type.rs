@@ -23,8 +23,11 @@ pub enum TypeType {
 
 pub type TypeInfoVtable = Box<dyn TypeInfo>;
 
-pub fn wrap_value<T: 'static + TypeInfo>(val: T) -> TypeInfoVtable {
-    Box::new(val)
+#[macro_export]
+macro_rules! wrap_value {
+    ($value: expr) => {
+        Box::new($value)
+    }
 }
 
 pub trait TypeInfo {
@@ -66,7 +69,7 @@ fn wrap_as_option(val: TypeInfoVtable) -> TypeInfoVtable {
         }
     }
 
-    wrap_value(TypeInfoStruct(val))
+    wrap_value!(TypeInfoStruct(val))
 }
 
 impl<T> Type for Option<T> where T: Type {
@@ -113,11 +116,11 @@ macro_rules! primitive_type {
                     }
 
                     fn copy(&self) -> TypeInfoVtable {
-                        wrap_value(TypeInfoStruct)
+                        wrap_value!(TypeInfoStruct)
                     }
                 }
 
-                wrap_value(TypeInfoStruct)
+                wrap_value!(TypeInfoStruct)
             }
         }
     };

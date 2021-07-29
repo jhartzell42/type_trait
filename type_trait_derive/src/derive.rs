@@ -55,11 +55,11 @@ fn impl_struct(name: Ident, generics: Generics, fields: Fields) -> TokenStream {
                     }
 
                     fn copy(&self) -> ::type_trait::r#type::TypeInfoVtable {
-                        ::type_trait::r#type::wrap_value(TypeInfoStruct)
+                        Box::new(TypeInfoStruct)
                     }
                 }
 
-                ::type_trait::r#type::wrap_value(TypeInfoStruct)
+                Box::new(TypeInfoStruct)
             }
         }
     }
@@ -92,11 +92,11 @@ fn impl_unit_struct(name: Ident, generics: Generics) -> TokenStream {
                     }
 
                     fn copy(&self) -> ::type_trait::r#type::TypeInfoVtable {
-                        ::type_trait::r#type::wrap_value(TypeInfoStruct)
+                        Box::new(TypeInfoStruct)
                     }
                 }
 
-                ::type_trait::r#type::wrap_value(TypeInfoStruct)
+                Box::new(TypeInfoStruct)
             }
         }
     }
