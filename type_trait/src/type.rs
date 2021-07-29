@@ -1,4 +1,5 @@
-use std::marker::PhantomData;
+use std::sync::Mutex;
+use std::collections::HashMap;
 
 pub trait Type {
     fn type_info() -> TypeInfoVtable;
@@ -31,14 +32,19 @@ pub trait TypeInfo {
     fn type_type(&self) -> TypeType;
 }
 
-impl<T: 'static> Type for Option<T> where T: Type {
+impl<T> Type for Option<T> where T: Type {
     fn type_info() -> TypeInfoVtable {
-        struct TypeInfoStruct<T2>(PhantomData<T2>);
+        struct TypeInfoStruct(TypeInfoVtable);
 
-        impl<T2: Type> TypeInfo for TypeInfoStruct<T2> {
+        impl TypeInfo for TypeInfoStruct {
             fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
                 match w {
-                    0 => Some(("some", T2::type_info())),
+                    0 => {
+                        let vtable = match self {
+                            TypeInfoStruct(vtable) => vtable
+                        };
+                        Some(("some", *vtable))
+                    },
                     _ => None,
                 }
             }
@@ -52,8 +58,7 @@ impl<T: 'static> Type for Option<T> where T: Type {
             }
         }
 
-        // TypeInfoStruct is zero-width, so this doesn't actually allocate
-        let leaked_box: Box<TypeInfoStruct<T>> = Box::new(TypeInfoStruct(PhantomData));
+        let leaked_box: Box<TypeInfoStruct> = Box::new(TypeInfoStruct(type_info));
         Box::leak(leaked_box)
     }
 }
