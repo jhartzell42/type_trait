@@ -9,11 +9,5 @@ description = "Type Introspection for Rust"
 name = "demo"
 path = "bin/demo/main.rs"
 
-[lib]
-proc-macro = true
-
 [dependencies]
-proc-macro2 = "1.0"
-syn = { version = "1.0.38", features = ["extra-traits", "full"] }
-quote = "1.0.3"
-proc-macro-crate = "1.0.0"
+type_trait_derive = { path = "../type_trait_derive" }

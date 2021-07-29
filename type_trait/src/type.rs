@@ -22,11 +22,12 @@ enum TypeType {
     String,
     ObjectPath,
     Signature,
+    Unit,
 }
 
 trait TypeInfo {
-    fn variant_by_index(&self, which: usize) -> Option<(&'static str, Box<dyn TypeInfo>)>;
     fn member_by_index(&self, which: usize) -> Option<(&'static str, Box<dyn TypeInfo>)>;
+    fn name(&self) -> Option<&'static str>;
     fn type_type(&self) -> TypeType;
 }
 
@@ -39,18 +40,22 @@ impl TypeInfo for PrimitiveTypeInfo {
         self.type_type
     }
 
-    fn member_by_index(&self, _: usize) {
+    fn member_by_index(&self, _: usize) -> Option<(&'static str, Box<dyn TypeInfo>)> {
+        None
+    }
+
+    fn name(&self) -> Option<&'static str> {
         None
     }
 }
 
-fn print_type_info(info: Box<dyn TypeInfo>, indent_level: u32) -> () {
-    let indent: String = (0..indent_level).map(' ').collect();
+pub fn print_type_info(info: Box<dyn TypeInfo>, indent_level: u32) -> () {
+    let indent: String = (0..indent_level).map(|_| ' ').collect();
     println!("{}{:?}", indent, info.type_type());
     match info.type_type() {
-        TypeType::Enum | TypeType::Struct | TypeType::Maybe | TypeType::Array => {
+        TypeType::Enum(_) | TypeType::Struct(_) | TypeType::Maybe | TypeType::Array => {
             for i in 0.. {
-                if let Some(name, child_info) = info.member_by_index(i) {
+                if let Some((name, child_info)) = info.member_by_index(i) {
                     println!("{}  {}", indent, name);
                     print_type_info(child_info, indent_level + 4);
                 } else {

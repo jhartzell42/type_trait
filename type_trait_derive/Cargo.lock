@@ -77,8 +77,8 @@ dependencies = [
 ]
 
 [[package]]
-name = "type_trait"
-version = "0.0.1"
+name = "type_trait_derive"
+version = "0.1.0"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
