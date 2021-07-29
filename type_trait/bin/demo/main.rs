@@ -5,9 +5,19 @@ use type_trait::r#type::{Type, print_type_info};
 use type_trait_derive::Type;
 
 #[derive(Type)]
-struct Foo;
+struct Foo {
+    foo: Bar,
+    bar: i32,
+    baz: i32,
+}
+
+#[derive(Type)]
+struct Bar {
+    foo: f32,
+    bar: f64,
+    baz: i32,
+}
 
 fn main() -> () {
-    print_type_info(i32::type_info(), 0);
     print_type_info(Foo::type_info(), 0);
 }

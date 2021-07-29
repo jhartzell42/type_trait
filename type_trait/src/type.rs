@@ -1,13 +1,13 @@
 
 pub trait Type {
-    fn type_info() -> Box<dyn TypeInfo>;
+    fn type_info() -> TypeInfoVtable;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub enum TypeType {
     Enum,
     Struct,
-    Maybe,
+    Option,
     Array,
     Byte,
     Boolean,
@@ -22,20 +22,45 @@ pub enum TypeType {
     Unit,
 }
 
+pub type TypeInfoVtable = &'static (dyn TypeInfo + 'static);
+
 pub trait TypeInfo {
-    fn member_by_index(&self, which: usize) -> Option<(&'static str, Box<dyn TypeInfo>)>;
+    fn member_by_index(&self, which: usize) -> Option<(&'static str, TypeInfoVtable)>;
     fn name(&self) -> Option<&'static str>;
     fn type_type(&self) -> TypeType;
+}
+
+impl<T> Type for Option<T> where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        struct TypeInfoStruct;
+
+        impl TypeInfo for TypeInfoStruct {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
+                Some(("some", &tis))
+            }
+
+            fn name(&self) -> Option<&'static str> {
+                None
+            }
+
+            fn type_type(&self) -> TypeType {
+                TypeType::Option
+            }
+        }
+
+        static tis: TypeInfoStruct = TypeInfoStruct;
+        &tis
+    }
 }
 
 macro_rules! primitive_type {
     ($type: ty, $value: expr) => {
         impl Type for $type {
-            fn type_info() -> Box<dyn TypeInfo> {
+            fn type_info() -> TypeInfoVtable {
                 struct TypeInfoStruct;
 
                 impl TypeInfo for TypeInfoStruct {
-                    fn member_by_index(&self, _: usize) -> Option<(&'static str, Box<dyn TypeInfo>)> {
+                    fn member_by_index(&self, _: usize) -> Option<(&'static str, TypeInfoVtable)> {
                         None
                     }
 
@@ -48,7 +73,8 @@ macro_rules! primitive_type {
                     }
                 }
 
-                Box::new(TypeInfoStruct)
+                static tis: TypeInfoStruct = TypeInfoStruct;
+                &tis
             }
         }
     };
@@ -68,11 +94,11 @@ primitive_type!{&str, TypeType::String}
 primitive_type!{String, TypeType::String}
 primitive_type!{(), TypeType::Unit}
 
-pub fn print_type_info(info: Box<dyn TypeInfo>, indent_level: u32) -> () {
+pub fn print_type_info(info: TypeInfoVtable, indent_level: u32) -> () {
     let indent: String = (0..indent_level).map(|_| ' ').collect();
     println!("{}{:?}", indent, info.type_type());
     match info.type_type() {
-        TypeType::Enum | TypeType::Struct | TypeType::Maybe | TypeType::Array => {
+        TypeType::Enum | TypeType::Struct | TypeType::Option | TypeType::Array => {
             for i in 0.. {
                 if let Some((name, child_info)) = info.member_by_index(i) {
                     println!("{}  {}", indent, name);
