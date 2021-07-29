@@ -1,3 +1,4 @@
+use std::marker::PhantomData;
 
 pub trait Type {
     fn type_info() -> TypeInfoVtable;
@@ -22,7 +23,7 @@ pub enum TypeType {
     Unit,
 }
 
-pub type TypeInfoVtable = &'static (dyn TypeInfo + 'static);
+pub type TypeInfoVtable = &'static dyn TypeInfo;
 
 pub trait TypeInfo {
     fn member_by_index(&self, which: usize) -> Option<(&'static str, TypeInfoVtable)>;
@@ -30,13 +31,16 @@ pub trait TypeInfo {
     fn type_type(&self) -> TypeType;
 }
 
-impl<T> Type for Option<T> where T: Type {
+impl<T: 'static> Type for Option<T> where T: Type {
     fn type_info() -> TypeInfoVtable {
-        struct TypeInfoStruct;
+        struct TypeInfoStruct<T2>(PhantomData<T2>);
 
-        impl TypeInfo for TypeInfoStruct {
+        impl<T2: Type> TypeInfo for TypeInfoStruct<T2> {
             fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
-                Some(("some", &tis))
+                match w {
+                    0 => Some(("some", T2::type_info())),
+                    _ => None,
+                }
             }
 
             fn name(&self) -> Option<&'static str> {
@@ -48,8 +52,9 @@ impl<T> Type for Option<T> where T: Type {
             }
         }
 
-        static tis: TypeInfoStruct = TypeInfoStruct;
-        &tis
+        // TypeInfoStruct is zero-width, so this doesn't actually allocate
+        let leaked_box: Box<TypeInfoStruct<T>> = Box::new(TypeInfoStruct(PhantomData));
+        Box::leak(leaked_box)
     }
 }
 
@@ -73,8 +78,8 @@ macro_rules! primitive_type {
                     }
                 }
 
-                static tis: TypeInfoStruct = TypeInfoStruct;
-                &tis
+                static TIS: TypeInfoStruct = TypeInfoStruct;
+                &TIS
             }
         }
     };
