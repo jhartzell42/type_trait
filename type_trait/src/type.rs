@@ -1,6 +1,3 @@
-use std::sync::Mutex;
-use std::collections::HashMap;
-
 pub trait Type {
     fn type_info() -> TypeInfoVtable;
 }
@@ -24,12 +21,13 @@ pub enum TypeType {
     Unit,
 }
 
-pub type TypeInfoVtable = &'static dyn TypeInfo;
+pub type TypeInfoVtable = Box<dyn TypeInfo>;
 
 pub trait TypeInfo {
     fn member_by_index(&self, which: usize) -> Option<(&'static str, TypeInfoVtable)>;
     fn name(&self) -> Option<&'static str>;
     fn type_type(&self) -> TypeType;
+    fn copy(&self) -> TypeInfoVtable;
 }
 
 impl<T> Type for Option<T> where T: Type {
@@ -43,7 +41,7 @@ impl<T> Type for Option<T> where T: Type {
                         let vtable = match self {
                             TypeInfoStruct(vtable) => vtable
                         };
-                        Some(("some", *vtable))
+                        Some(("some", vtable.copy()))
                     },
                     _ => None,
                 }
@@ -56,10 +54,17 @@ impl<T> Type for Option<T> where T: Type {
             fn type_type(&self) -> TypeType {
                 TypeType::Option
             }
+
+            fn copy(&self) -> TypeInfoVtable {
+                let vtable = match self {
+                    TypeInfoStruct(vtable) => vtable
+                };
+                Box::new(TypeInfoStruct(vtable.copy()))
+            }
         }
 
-        let leaked_box: Box<TypeInfoStruct> = Box::new(TypeInfoStruct(type_info));
-        Box::leak(leaked_box)
+        // TODO: Save this allocation. Is it possible?
+        Box::new(TypeInfoStruct(T::type_info()))
     }
 }
 
@@ -81,10 +86,13 @@ macro_rules! primitive_type {
                     fn type_type(&self) -> TypeType {
                         $value
                     }
+
+                    fn copy(&self) -> TypeInfoVtable {
+                        Box::new(TypeInfoStruct)
+                    }
                 }
 
-                static TIS: TypeInfoStruct = TypeInfoStruct;
-                &TIS
+                Box::new(TypeInfoStruct)
             }
         }
     };

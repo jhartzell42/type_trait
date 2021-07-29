@@ -6,8 +6,8 @@ use type_trait_derive::Type;
 
 #[derive(Type)]
 struct Foo {
-    foo: Bar,
-    bar: i32,
+    foo: Option<Bar>,
+    bar: Option<i32>,
     baz: i32,
 }
 
@@ -16,7 +16,11 @@ struct Bar {
     foo: f32,
     bar: f64,
     baz: i32,
+    baz2: Baz,
 }
+
+#[derive(Type)]
+struct Baz;
 
 fn main() -> () {
     print_type_info(Foo::type_info(), 0);

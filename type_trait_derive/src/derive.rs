@@ -53,10 +53,13 @@ fn impl_struct(name: Ident, generics: Generics, fields: Fields) -> TokenStream {
                     fn type_type(&self) -> ::type_trait::r#type::TypeType {
                         ::type_trait::r#type::TypeType::Struct
                     }
+
+                    fn copy(&self) -> ::type_trait::r#type::TypeInfoVtable {
+                        Box::new(TypeInfoStruct)
+                    }
                 }
 
-                static tis: TypeInfoStruct = TypeInfoStruct;
-                &tis
+                Box::new(TypeInfoStruct)
             }
         }
     }
@@ -87,10 +90,13 @@ fn impl_unit_struct(name: Ident, generics: Generics) -> TokenStream {
                     fn type_type(&self) -> ::type_trait::r#type::TypeType {
                         ::type_trait::r#type::TypeType::Struct
                     }
+
+                    fn copy(&self) -> ::type_trait::r#type::TypeInfoVtable {
+                        Box::new(TypeInfoStruct)
+                    }
                 }
 
-                static tis: TypeInfoStruct = TypeInfoStruct;
-                &tis
+                Box::new(TypeInfoStruct)
             }
         }
     }
