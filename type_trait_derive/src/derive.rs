@@ -28,16 +28,16 @@ fn impl_struct(name_impl: Ident, generics: Generics, fields: Fields) -> TokenStr
     let name_impl_str = name_impl.to_string();
 
     quote! {
-        impl #impl_generics ::type_trait::r#type::Type for #name_impl #ty_generics #where_clause {
-            fn type_info() -> ::type_trait::r#type::TypeInfoVtable {
-                struct TypeInfoStruct;
+        impl #impl_generics ::type_trait::r#type::Introspectable for #name_impl #ty_generics #where_clause {
+            fn introspection_info() -> ::type_trait::r#type::IntrospectionInfoVtable {
+                struct IntrospectionInfoStruct;
 
-                impl ::type_trait::r#type::TypeInfoImpl for TypeInfoStruct {
-                    fn member_by_index_impl(w: usize) -> Option<(&'static str, ::type_trait::r#type::TypeInfoVtable)> {
+                impl ::type_trait::r#type::IntrospectionInfoImpl for IntrospectionInfoStruct {
+                    fn member_by_index_impl(w: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionInfoVtable)> {
                         match w {
                             #(
                                 #count => {
-                                    Some((#field_name_impls, <#field_types as ::type_trait::r#type::Type>::type_info()))
+                                    Some((#field_name_impls, <#field_types as ::type_trait::r#type::Introspectable>::introspection_info()))
                                 }
                             ),*
                             _ => {
@@ -50,36 +50,32 @@ fn impl_struct(name_impl: Ident, generics: Generics, fields: Fields) -> TokenStr
                         Some(#name_impl_str)
                     }
 
-                    fn type_type_impl() -> ::type_trait::r#type::TypeType {
-                        ::type_trait::r#type::TypeType::Struct
+                    fn primary_type_impl() -> ::type_trait::r#type::PrimaryType {
+                        ::type_trait::r#type::PrimaryType::Struct
                     }
 
-                    fn new() -> TypeInfoStruct {
-                        TypeInfoStruct
+                    fn new() -> IntrospectionInfoStruct {
+                        IntrospectionInfoStruct
                     }
                 }
 
-                Box::new(TypeInfoStruct)
+                Box::new(IntrospectionInfoStruct)
             }
         }
     }
 }
 
-fn impl_enum(name_impl: Ident, generics: Generics, attrs: Vec<Attribute>, data: DataEnum) -> TokenStream {
-    panic!("");
-}
-
-fn impl_unit_struct(name_impl: Ident, generics: Generics) -> TokenStream {
+fn impl_enum(name_impl: Ident, generics: Generics, attrs: Vec<Attribute>, _: DataEnum) -> TokenStream {
     let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
     let name_impl_str = name_impl.to_string();
 
     quote! {
-        impl #impl_generics ::type_trait::r#type::Type for #name_impl #ty_generics #where_clause {
-            fn type_info() -> ::type_trait::r#type::TypeInfoVtable {
-                struct TypeInfoStruct;
+        impl #impl_generics ::type_trait::r#type::Introspectable for #name_impl #ty_generics #where_clause {
+            fn introspection_info() -> ::type_trait::r#type::IntrospectionInfoVtable {
+                struct IntrospectionInfoStruct;
 
-                impl ::type_trait::r#type::TypeInfoImpl for TypeInfoStruct {
-                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::TypeInfoVtable)> {
+                impl ::type_trait::r#type::IntrospectionInfoImpl for IntrospectionInfoStruct {
+                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionInfoVtable)> {
                         None
                     }
 
@@ -87,16 +83,49 @@ fn impl_unit_struct(name_impl: Ident, generics: Generics) -> TokenStream {
                         Some(#name_impl_str)
                     }
 
-                    fn type_type_impl() -> ::type_trait::r#type::TypeType {
-                        ::type_trait::r#type::TypeType::Struct
+                    fn primary_type_impl() -> ::type_trait::r#type::PrimaryType {
+                        ::type_trait::r#type::PrimaryType::Enum
                     }
 
-                    fn new() -> TypeInfoStruct {
-                        TypeInfoStruct
+                    fn new() -> IntrospectionInfoStruct {
+                        IntrospectionInfoStruct
                     }
                 }
 
-                Box::new(TypeInfoStruct)
+                Box::new(IntrospectionInfoStruct)
+            }
+        }
+    }
+}
+
+fn impl_unit_struct(name_impl: Ident, generics: Generics) -> TokenStream {
+    let (impl_generics, ty_generics, where_clause) = generics.split_for_impl();
+    let name_impl_str = name_impl.to_string();
+
+    quote! {
+        impl #impl_generics ::type_trait::r#type::Introspectable for #name_impl #ty_generics #where_clause {
+            fn introspection_info() -> ::type_trait::r#type::IntrospectionInfoVtable {
+                struct IntrospectionInfoStruct;
+
+                impl ::type_trait::r#type::IntrospectionInfoImpl for IntrospectionInfoStruct {
+                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionInfoVtable)> {
+                        None
+                    }
+
+                    fn name_impl() -> Option<&'static str> {
+                        Some(#name_impl_str)
+                    }
+
+                    fn primary_type_impl() -> ::type_trait::r#type::PrimaryType {
+                        ::type_trait::r#type::PrimaryType::Struct
+                    }
+
+                    fn new() -> IntrospectionInfoStruct {
+                        IntrospectionInfoStruct
+                    }
+                }
+
+                Box::new(IntrospectionInfoStruct)
             }
         }
     }
