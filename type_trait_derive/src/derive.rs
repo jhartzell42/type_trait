@@ -29,11 +29,11 @@ fn impl_struct(name_impl: Ident, generics: Generics, fields: Fields) -> TokenStr
 
     quote! {
         impl #impl_generics ::type_trait::r#type::Introspectable for #name_impl #ty_generics #where_clause {
-            fn introspection_info() -> ::type_trait::r#type::IntrospectionInfoVtable {
+            fn introspection_info() -> ::type_trait::r#type::IntrospectionHandle {
                 struct IntrospectionInfoStruct;
 
                 impl ::type_trait::r#type::IntrospectionInfoImpl for IntrospectionInfoStruct {
-                    fn member_by_index_impl(w: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionInfoVtable)> {
+                    fn member_by_index_impl(w: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionHandle)> {
                         match w {
                             #(
                                 #count => {
@@ -71,11 +71,11 @@ fn impl_enum(name_impl: Ident, generics: Generics, attrs: Vec<Attribute>, _: Dat
 
     quote! {
         impl #impl_generics ::type_trait::r#type::Introspectable for #name_impl #ty_generics #where_clause {
-            fn introspection_info() -> ::type_trait::r#type::IntrospectionInfoVtable {
+            fn introspection_info() -> ::type_trait::r#type::IntrospectionHandle {
                 struct IntrospectionInfoStruct;
 
                 impl ::type_trait::r#type::IntrospectionInfoImpl for IntrospectionInfoStruct {
-                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionInfoVtable)> {
+                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionHandle)> {
                         None
                     }
 
@@ -104,11 +104,11 @@ fn impl_unit_struct(name_impl: Ident, generics: Generics) -> TokenStream {
 
     quote! {
         impl #impl_generics ::type_trait::r#type::Introspectable for #name_impl #ty_generics #where_clause {
-            fn introspection_info() -> ::type_trait::r#type::IntrospectionInfoVtable {
+            fn introspection_info() -> ::type_trait::r#type::IntrospectionHandle {
                 struct IntrospectionInfoStruct;
 
                 impl ::type_trait::r#type::IntrospectionInfoImpl for IntrospectionInfoStruct {
-                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionInfoVtable)> {
+                    fn member_by_index_impl(_: usize) -> Option<(&'static str, ::type_trait::r#type::IntrospectionHandle)> {
                         None
                     }
 

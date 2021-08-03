@@ -1,5 +1,5 @@
 pub trait Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable;
+    fn introspection_info() -> IntrospectionHandle;
 }
 
 #[derive(Clone, Copy, Debug, PartialEq)]
@@ -21,24 +21,24 @@ pub enum PrimaryType {
     Unit,
 }
 
-pub type IntrospectionInfoVtable = Box<dyn IntrospectionInfo>;
+pub type IntrospectionHandle = Box<dyn IntrospectionInfo>;
 
 pub trait IntrospectionInfoImpl {
-    fn member_by_index_impl(which: usize) -> Option<(&'static str, IntrospectionInfoVtable)>;
+    fn member_by_index_impl(which: usize) -> Option<(&'static str, IntrospectionHandle)>;
     fn name_impl() -> Option<&'static str>;
     fn primary_type_impl() -> PrimaryType;
     fn new() -> Self;
 }
 
 pub trait IntrospectionInfo {
-    fn member_by_index(&self, which: usize) -> Option<(&'static str, IntrospectionInfoVtable)>;
+    fn member_by_index(&self, which: usize) -> Option<(&'static str, IntrospectionHandle)>;
     fn name(&self) -> Option<&'static str>;
     fn primary_type(&self) -> PrimaryType;
-    fn copy(&self) -> IntrospectionInfoVtable;
+    fn copy(&self) -> IntrospectionHandle;
 }
 
 impl<T: 'static + IntrospectionInfoImpl> IntrospectionInfo for T {
-    fn member_by_index(&self, which: usize) -> Option<(&'static str, IntrospectionInfoVtable)> {
+    fn member_by_index(&self, which: usize) -> Option<(&'static str, IntrospectionHandle)> {
         T::member_by_index_impl(which)
     }
 
@@ -50,18 +50,18 @@ impl<T: 'static + IntrospectionInfoImpl> IntrospectionInfo for T {
         T::primary_type_impl()
     }
 
-    fn copy(&self) -> IntrospectionInfoVtable {
+    fn copy(&self) -> IntrospectionHandle {
         Box::new(T::new())
     }
 }
 
 impl<T> Introspectable for Option<T> where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         let val = T::introspection_info();
-        struct IntrospectionInfoStruct(IntrospectionInfoVtable);
+        struct IntrospectionInfoStruct(IntrospectionHandle);
 
         impl IntrospectionInfo for IntrospectionInfoStruct {
-            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionInfoVtable)> {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionHandle)> {
                 match w {
                     0 => {
                         let vtable = match self {
@@ -81,7 +81,7 @@ impl<T> Introspectable for Option<T> where T: Introspectable {
                 PrimaryType::Option
             }
 
-            fn copy(&self) -> IntrospectionInfoVtable {
+            fn copy(&self) -> IntrospectionHandle {
                 let vtable = match self {
                     IntrospectionInfoStruct(vtable) => vtable
                 };
@@ -94,12 +94,12 @@ impl<T> Introspectable for Option<T> where T: Introspectable {
 }
 
 impl<T, const N: usize> Introspectable for [T; N] where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         let val = T::introspection_info();
-        struct IntrospectionInfoStruct(IntrospectionInfoVtable);
+        struct IntrospectionInfoStruct(IntrospectionHandle);
 
         impl IntrospectionInfo for IntrospectionInfoStruct {
-            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionInfoVtable)> {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionHandle)> {
                 match w {
                     0 => {
                         let vtable = match self {
@@ -119,7 +119,7 @@ impl<T, const N: usize> Introspectable for [T; N] where T: Introspectable {
                 PrimaryType::Array
             }
 
-            fn copy(&self) -> IntrospectionInfoVtable {
+            fn copy(&self) -> IntrospectionHandle {
                 let vtable = match self {
                     IntrospectionInfoStruct(vtable) => vtable
                 };
@@ -132,12 +132,12 @@ impl<T, const N: usize> Introspectable for [T; N] where T: Introspectable {
 }
 
 impl<T> Introspectable for &[T] where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         let val = T::introspection_info();
-        struct IntrospectionInfoStruct(IntrospectionInfoVtable);
+        struct IntrospectionInfoStruct(IntrospectionHandle);
 
         impl IntrospectionInfo for IntrospectionInfoStruct {
-            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionInfoVtable)> {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionHandle)> {
                 match w {
                     0 => {
                         let vtable = match self {
@@ -157,7 +157,7 @@ impl<T> Introspectable for &[T] where T: Introspectable {
                 PrimaryType::Array
             }
 
-            fn copy(&self) -> IntrospectionInfoVtable {
+            fn copy(&self) -> IntrospectionHandle {
                 let vtable = match self {
                     IntrospectionInfoStruct(vtable) => vtable
                 };
@@ -170,12 +170,12 @@ impl<T> Introspectable for &[T] where T: Introspectable {
 }
 
 impl<T> Introspectable for Vec<T> where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         let val = T::introspection_info();
-        struct IntrospectionInfoStruct(IntrospectionInfoVtable);
+        struct IntrospectionInfoStruct(IntrospectionHandle);
 
         impl IntrospectionInfo for IntrospectionInfoStruct {
-            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionInfoVtable)> {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, IntrospectionHandle)> {
                 match w {
                     0 => {
                         let vtable = match self {
@@ -195,7 +195,7 @@ impl<T> Introspectable for Vec<T> where T: Introspectable {
                 PrimaryType::Array
             }
 
-            fn copy(&self) -> IntrospectionInfoVtable {
+            fn copy(&self) -> IntrospectionHandle {
                 let vtable = match self {
                     IntrospectionInfoStruct(vtable) => vtable
                 };
@@ -208,19 +208,19 @@ impl<T> Introspectable for Vec<T> where T: Introspectable {
 }
 
 impl<T> Introspectable for &T where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         T::introspection_info()
     }
 }
 
 impl<T> Introspectable for &mut T where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         T::introspection_info()
     }
 }
 
 impl<T> Introspectable for Box<T> where T: Introspectable {
-    fn introspection_info() -> IntrospectionInfoVtable {
+    fn introspection_info() -> IntrospectionHandle {
         T::introspection_info()
     }
 }
@@ -228,11 +228,11 @@ impl<T> Introspectable for Box<T> where T: Introspectable {
 macro_rules! primitive_type {
     ($type: ty, $value: expr) => {
         impl Introspectable for $type {
-            fn introspection_info() -> IntrospectionInfoVtable {
+            fn introspection_info() -> IntrospectionHandle {
                 struct IntrospectionInfoStruct;
 
                 impl IntrospectionInfoImpl for IntrospectionInfoStruct {
-                    fn member_by_index_impl(_: usize) -> Option<(&'static str, IntrospectionInfoVtable)> {
+                    fn member_by_index_impl(_: usize) -> Option<(&'static str, IntrospectionHandle)> {
                         None
                     }
 
@@ -269,7 +269,7 @@ primitive_type!{&str, PrimaryType::String}
 primitive_type!{String, PrimaryType::String}
 primitive_type!{(), PrimaryType::Unit}
 
-pub fn print_introspection_info(info: IntrospectionInfoVtable, indent_level: u32) -> () {
+pub fn print_introspection_info(info: IntrospectionHandle, indent_level: u32) -> () {
     let indent: String = (0..indent_level).map(|_| ' ').collect();
     println!("{}{:?}", indent, info.primary_type());
     match info.primary_type() {
