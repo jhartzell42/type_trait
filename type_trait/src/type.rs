@@ -23,11 +23,11 @@ pub enum TypeType {
 
 pub type TypeInfoVtable = Box<dyn TypeInfo>;
 
-#[macro_export]
-macro_rules! wrap_value {
-    ($value: expr) => {
-        Box::new($value)
-    }
+pub trait TypeInfoImpl {
+    fn member_by_index_impl(which: usize) -> Option<(&'static str, TypeInfoVtable)>;
+    fn name_impl() -> Option<&'static str>;
+    fn type_type_impl() -> TypeType;
+    fn new() -> Self;
 }
 
 pub trait TypeInfo {
@@ -35,6 +35,24 @@ pub trait TypeInfo {
     fn name(&self) -> Option<&'static str>;
     fn type_type(&self) -> TypeType;
     fn copy(&self) -> TypeInfoVtable;
+}
+
+impl<T: 'static + TypeInfoImpl> TypeInfo for T {
+    fn member_by_index(&self, which: usize) -> Option<(&'static str, TypeInfoVtable)> {
+        T::member_by_index_impl(which)
+    }
+
+    fn name(&self) -> Option<&'static str> {
+        T::name_impl()
+    }
+
+    fn type_type(&self) -> TypeType {
+        T::type_type_impl()
+    }
+
+    fn copy(&self) -> TypeInfoVtable {
+        Box::new(T::new())
+    }
 }
 
 fn wrap_as_option(val: TypeInfoVtable) -> TypeInfoVtable {
@@ -69,7 +87,7 @@ fn wrap_as_option(val: TypeInfoVtable) -> TypeInfoVtable {
         }
     }
 
-    wrap_value!(TypeInfoStruct(val))
+    Box::new(TypeInfoStruct(val))
 }
 
 impl<T> Type for Option<T> where T: Type {
@@ -102,25 +120,25 @@ macro_rules! primitive_type {
             fn type_info() -> TypeInfoVtable {
                 struct TypeInfoStruct;
 
-                impl TypeInfo for TypeInfoStruct {
-                    fn member_by_index(&self, _: usize) -> Option<(&'static str, TypeInfoVtable)> {
+                impl TypeInfoImpl for TypeInfoStruct {
+                    fn member_by_index_impl(_: usize) -> Option<(&'static str, TypeInfoVtable)> {
                         None
                     }
 
-                    fn name(&self) -> Option<&'static str> {
+                    fn name_impl() -> Option<&'static str> {
                         None
                     }
 
-                    fn type_type(&self) -> TypeType {
+                    fn type_type_impl() -> TypeType {
                         $value
                     }
 
-                    fn copy(&self) -> TypeInfoVtable {
-                        wrap_value!(TypeInfoStruct)
+                    fn new() -> TypeInfoStruct {
+                        TypeInfoStruct
                     }
                 }
 
-                wrap_value!(TypeInfoStruct)
+                Box::new(TypeInfoStruct)
             }
         }
     };
