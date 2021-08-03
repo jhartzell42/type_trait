@@ -55,44 +55,155 @@ impl<T: 'static + TypeInfoImpl> TypeInfo for T {
     }
 }
 
-fn wrap_as_option(val: TypeInfoVtable) -> TypeInfoVtable {
-    struct TypeInfoStruct(TypeInfoVtable);
+impl<T> Type for Option<T> where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        let val = T::type_info();
+        struct TypeInfoStruct(TypeInfoVtable);
 
-    impl TypeInfo for TypeInfoStruct {
-        fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
-            match w {
-                0 => {
-                    let vtable = match self {
-                        TypeInfoStruct(vtable) => vtable
-                    };
-                    Some(("some", vtable.copy()))
-                },
-                _ => None,
+        impl TypeInfo for TypeInfoStruct {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
+                match w {
+                    0 => {
+                        let vtable = match self {
+                            TypeInfoStruct(vtable) => vtable
+                        };
+                        Some(("some", vtable.copy()))
+                    },
+                    _ => None,
+                }
+            }
+
+            fn name(&self) -> Option<&'static str> {
+                None
+            }
+
+            fn type_type(&self) -> TypeType {
+                TypeType::Option
+            }
+
+            fn copy(&self) -> TypeInfoVtable {
+                let vtable = match self {
+                    TypeInfoStruct(vtable) => vtable
+                };
+                Box::new(TypeInfoStruct(vtable.copy()))
             }
         }
 
-        fn name(&self) -> Option<&'static str> {
-            None
-        }
-
-        fn type_type(&self) -> TypeType {
-            TypeType::Option
-        }
-
-        fn copy(&self) -> TypeInfoVtable {
-            let vtable = match self {
-                TypeInfoStruct(vtable) => vtable
-            };
-            wrap_as_option(vtable.copy())
-        }
+        Box::new(TypeInfoStruct(val))
     }
-
-    Box::new(TypeInfoStruct(val))
 }
 
-impl<T> Type for Option<T> where T: Type {
+impl<T, const N: usize> Type for [T; N] where T: Type {
     fn type_info() -> TypeInfoVtable {
-        wrap_as_option(T::type_info())
+        let val = T::type_info();
+        struct TypeInfoStruct(TypeInfoVtable);
+
+        impl TypeInfo for TypeInfoStruct {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
+                match w {
+                    0 => {
+                        let vtable = match self {
+                            TypeInfoStruct(vtable) => vtable
+                        };
+                        Some(("some", vtable.copy()))
+                    },
+                    _ => None,
+                }
+            }
+
+            fn name(&self) -> Option<&'static str> {
+                None
+            }
+
+            fn type_type(&self) -> TypeType {
+                TypeType::Array
+            }
+
+            fn copy(&self) -> TypeInfoVtable {
+                let vtable = match self {
+                    TypeInfoStruct(vtable) => vtable
+                };
+                Box::new(TypeInfoStruct(vtable.copy()))
+            }
+        }
+
+        Box::new(TypeInfoStruct(val))
+    }
+}
+
+impl<T> Type for &[T] where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        let val = T::type_info();
+        struct TypeInfoStruct(TypeInfoVtable);
+
+        impl TypeInfo for TypeInfoStruct {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
+                match w {
+                    0 => {
+                        let vtable = match self {
+                            TypeInfoStruct(vtable) => vtable
+                        };
+                        Some(("some", vtable.copy()))
+                    },
+                    _ => None,
+                }
+            }
+
+            fn name(&self) -> Option<&'static str> {
+                None
+            }
+
+            fn type_type(&self) -> TypeType {
+                TypeType::Array
+            }
+
+            fn copy(&self) -> TypeInfoVtable {
+                let vtable = match self {
+                    TypeInfoStruct(vtable) => vtable
+                };
+                Box::new(TypeInfoStruct(vtable.copy()))
+            }
+        }
+
+        Box::new(TypeInfoStruct(val))
+    }
+}
+
+impl<T> Type for Vec<T> where T: Type {
+    fn type_info() -> TypeInfoVtable {
+        let val = T::type_info();
+        struct TypeInfoStruct(TypeInfoVtable);
+
+        impl TypeInfo for TypeInfoStruct {
+            fn member_by_index(&self, w: usize) -> Option<(&'static str, TypeInfoVtable)> {
+                match w {
+                    0 => {
+                        let vtable = match self {
+                            TypeInfoStruct(vtable) => vtable
+                        };
+                        Some(("some", vtable.copy()))
+                    },
+                    _ => None,
+                }
+            }
+
+            fn name(&self) -> Option<&'static str> {
+                None
+            }
+
+            fn type_type(&self) -> TypeType {
+                TypeType::Array
+            }
+
+            fn copy(&self) -> TypeInfoVtable {
+                let vtable = match self {
+                    TypeInfoStruct(vtable) => vtable
+                };
+                Box::new(TypeInfoStruct(vtable.copy()))
+            }
+        }
+
+        Box::new(TypeInfoStruct(val))
     }
 }
 
