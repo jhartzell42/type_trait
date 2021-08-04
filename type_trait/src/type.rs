@@ -1,3 +1,5 @@
+use std::iter::{Iterator, IntoIterator};
+
 pub trait Introspectable {
     fn introspection_info() -> IntrospectionHandle;
 }
@@ -22,6 +24,46 @@ pub enum PrimaryType {
 }
 
 pub type IntrospectionHandle = Box<dyn IntrospectionInfo>;
+
+impl IntoIterator for &IntrospectionHandle {
+    type Item = (&'static str, IntrospectionHandle);
+    type IntoIter = IntrospectionIntoIterator;
+    fn into_iter(self) -> Self::IntoIter {
+        IntrospectionIntoIterator::new(self.copy())
+    }
+}
+
+impl IntoIterator for IntrospectionHandle {
+    type Item = (&'static str, IntrospectionHandle);
+    type IntoIter = IntrospectionIntoIterator;
+    fn into_iter(self) -> Self::IntoIter {
+        IntrospectionIntoIterator::new(self)
+    }
+}
+
+pub struct IntrospectionIntoIterator {
+    which: usize,
+    handle: IntrospectionHandle,
+}
+
+impl IntrospectionIntoIterator {
+    fn new(handle: IntrospectionHandle) -> Self {
+        IntrospectionIntoIterator {
+            which: 0,
+            handle,
+        }
+    }
+}
+
+impl Iterator for IntrospectionIntoIterator {
+    type Item = (&'static str, IntrospectionHandle);
+
+    fn next(&mut self) -> Option<Self::Item> {
+        let res = self.handle.member_by_index(self.which);
+        self.which += 1;
+        res
+    }
+}
 
 pub trait IntrospectionInfoImpl {
     fn member_by_index_impl(which: usize) -> Option<(&'static str, IntrospectionHandle)>;
@@ -67,7 +109,7 @@ impl<T> Introspectable for Option<T> where T: Introspectable {
                         let vtable = match self {
                             IntrospectionInfoStruct(vtable) => vtable
                         };
-                        Some(("some", vtable.copy()))
+                        Some(("value", vtable.copy()))
                     },
                     _ => None,
                 }
@@ -105,7 +147,7 @@ impl<T, const N: usize> Introspectable for [T; N] where T: Introspectable {
                         let vtable = match self {
                             IntrospectionInfoStruct(vtable) => vtable
                         };
-                        Some(("some", vtable.copy()))
+                        Some(("item", vtable.copy()))
                     },
                     _ => None,
                 }
@@ -143,7 +185,7 @@ impl<T> Introspectable for &[T] where T: Introspectable {
                         let vtable = match self {
                             IntrospectionInfoStruct(vtable) => vtable
                         };
-                        Some(("some", vtable.copy()))
+                        Some(("item", vtable.copy()))
                     },
                     _ => None,
                 }
@@ -268,21 +310,3 @@ primitive_type!{f64, PrimaryType::Double}
 primitive_type!{&str, PrimaryType::String}
 primitive_type!{String, PrimaryType::String}
 primitive_type!{(), PrimaryType::Unit}
-
-pub fn print_introspection_info(info: IntrospectionHandle, indent_level: u32) -> () {
-    let indent: String = (0..indent_level).map(|_| ' ').collect();
-    println!("{}{:?}", indent, info.primary_type());
-    match info.primary_type() {
-        PrimaryType::Enum | PrimaryType::Struct | PrimaryType::Option | PrimaryType::Array => {
-            for i in 0.. {
-                if let Some((name, child_info)) = info.member_by_index(i) {
-                    println!("{}  {}", indent, name);
-                    print_introspection_info(child_info, indent_level + 4);
-                } else {
-                    break;
-                }
-            }
-        },
-        _ => ()
-    }
-}
